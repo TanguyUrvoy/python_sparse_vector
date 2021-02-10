@@ -27,15 +27,18 @@ class SparseVector(object):
         Any object that can be interpreted as a numpy data type.
     """
 
-    def __init__(self, arg, default_value=0, size=None, dtype=np.float):
+    def __init__(self, arg, default_value=0, size=None, dtype=np.float, sparse_repr=False):
         self.default = default_value
         self.dtype = dtype
+        self.sparse_repr = sparse_repr
         self.indices = np.array([], dtype=np.int)
         self.values = np.array([], dtype=self.dtype)
         if isinstance(arg, (int, float)):  # 1e6 is a float
             self.size = int(arg)
         elif isinstance(arg, dict):
             self.__initialise_from_dict(arg)
+        elif isinstance(arg, str):
+            self.__initialise_from_string(arg)
         elif isinstance(arg, tuple):
             self.__initialise_from_tuple(arg)
         else:
@@ -132,7 +135,10 @@ class SparseVector(object):
         return value in self.values
 
     def __repr__(self):
-        return '[{}]'.format(', '.join([str(e) for e in self]))
+        if self.sparse_repr:
+            return to_string(self)
+        else:
+            return '[{}]'.format(', '.join([str(e) for e in self]))
 
     def __add__(self, other):
         result = self[:]
@@ -146,6 +152,12 @@ class SparseVector(object):
     def __initialise_from_dict(self, arg):
         self.values = np.array(list(arg.values()), dtype=self.dtype)
         self.indices = np.array(list(arg.keys()), dtype=np.int)
+        self.size = np.max(self.indices) + 1
+        
+    def __initialise_from_string(self, arg):
+        l = sorted([(np.int(p.split(':')[0]),p.split(':')[1]) for p in arg.strip('{ ,}').split(',')])
+        self.values = np.array([kv[1] for kv in l], dtype=self.dtype)
+        self.indices = np.array([kv[0] for kv in l], dtype=np.int)
         self.size = np.max(self.indices) + 1
 
     def __initialise_from_tuple(self, arg):
@@ -280,3 +292,24 @@ class SparseVector(object):
             self.values = np.delete(self.values, i)
         else:
             raise ValueError('{} not in SparseVector'.format(value))
+            
+    def to_dict(self):
+        """
+        Output as a python dictionary.
+        """
+        return { k:v for k,v in zip(self.indices,self.values) if v != self.default }
+            
+            
+    def to_string(self):
+        """
+        Output as a string in python dict format like for insance: '1:2,5:3,7:1'.
+        """
+        return ','.join(["{}:{}".format(k,v) for k,v in sorted(zip(self.indices,self.values)) if v != self.default])
+    
+    
+    def __hash__(self):
+        """
+        Makes the object hashable
+        """
+        return hash(to_sring(self))
+        
