@@ -111,6 +111,19 @@ class TestSparseVector(unittest.TestCase):
         sv[3], sv[4] = 5, 6
         self.assertEqual('[0, 0, 0, 5, 6]', repr(sv))
         self.assertEqual('[0, 0, 0, 5, 6]', str(sv))
+        
+    def test_sparse_string_representations_float_by_default(self):
+        sv = SparseVector(5, 0, sparse_repr = True)
+        sv[3], sv[4] = 5, 6
+        self.assertEqual('3:5.0,4:6.0', repr(sv))
+        self.assertEqual('3:5.0,4:6.0', str(sv))
+
+    def test_sparse_string_representations_int(self):
+        sv = SparseVector(5, 0, dtype=int, sparse_repr = True)
+        sv[3], sv[4] = 5, 6
+        self.assertEqual('3:5,4:6', repr(sv))
+        self.assertEqual('3:5,4:6', str(sv))
+        
 
     def test_access_with_negative_index(self):
         sv = SparseVector([0, 1, 2, 4])

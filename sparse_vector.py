@@ -133,10 +133,10 @@ class SparseVector(object):
 
     def __contains__(self, value):
         return value in self.values
-
+    
     def __repr__(self):
         if self.sparse_repr:
-            return to_string(self)
+            return self.to_string()
         else:
             return '[{}]'.format(', '.join([str(e) for e in self]))
 
@@ -298,14 +298,12 @@ class SparseVector(object):
         Output as a python dictionary.
         """
         return { k:v for k,v in zip(self.indices,self.values) if v != self.default }
-            
-            
+
     def to_string(self):
         """
         Output as a string in python dict format like for insance: '1:2,5:3,7:1'.
         """
         return ','.join(["{}:{}".format(k,v) for k,v in sorted(zip(self.indices,self.values)) if v != self.default])
-    
     
     def __hash__(self):
         """
