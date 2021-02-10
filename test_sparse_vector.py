@@ -366,6 +366,12 @@ class TestSparseVector(unittest.TestCase):
     def test_to_dict(self):
         sv = SparseVector([1, 2, 3, 0, 5])
         self.assertEqual({0:1, 1:2, 2:3, 4:5} , sv.to_dict())
+        
+    def test_lower_than(self):
+        sva = SparseVector("0:1,3:2")
+        svb = SparseVector("0:1,3:3,5:1")
+        self.assertTrue(sva < svb)
+        
 
 if __name__ == '__main__':
     unittest.main()
