@@ -9,7 +9,7 @@ of memory efficiency you don't wish to store these. cf. Sparse array:
 """
 
 import numpy as np
-from future.builtins import range
+#from future.builtins import range
 from six.moves import zip_longest
 
 
@@ -33,6 +33,8 @@ class SparseVector(object):
         self.sparse_repr = sparse_repr
         self.indices = np.array([], dtype=np.int)
         self.values = np.array([], dtype=self.dtype)
+        if isinstance(arg, SparseVector):
+            self.__initialise_from_sparse_vector(arg)
         if isinstance(arg, (int, float)):  # 1e6 is a float
             self.size = int(arg)
         elif isinstance(arg, dict):
@@ -45,6 +47,7 @@ class SparseVector(object):
             self.__initialise_from_iterable(arg)
         if size is not None:
             self.size = int(size)
+            assert self.size >= indices
 
     def __len__(self):
         return self.size
@@ -135,7 +138,9 @@ class SparseVector(object):
         return value in self.values
     
     def __repr__(self):
-        if self.sparse_repr:
+        if self.size == 0:
+            return ""
+        elif self.sparse_repr:
             return self.to_string()
         else:
             return '[{}]'.format(', '.join([str(e) for e in self]))
@@ -148,26 +153,62 @@ class SparseVector(object):
         for element in other:
             self.append(element)
         return self
+    
+    def normalize(self, inplace=False):
+        """
+        Remove keys where value is equal to self.default and sort keys.
+        The sparse vector is now in canonical form.
+        """
+        new_indices = []
+        new_values = []
+        for i,v in sorted(self.items()):
+            if v != self.default:
+                new_indices.append(i)
+                new_values.append(v)
+        if inplace:
+            self.__initialise_from_tuple((new_indices, new_values))
+            return self
+        else:
+            return SparseVector((new_indices, new_values)) 
+        
+    
+    def __initialise_from_void(self):
+        self.values = np.array([], dtype=self.dtype)
+        self.indices = np.array([], dtype=np.int)
+        self.size = 0
+    
+    def __initialise_from_sparse_vector(self, arg):
+        self.__initialise_from_tuple((arg.indices, arg.values))
 
     def __initialise_from_dict(self, arg):
-        self.values = np.array(list(arg.values()), dtype=self.dtype)
-        self.indices = np.array(list(arg.keys()), dtype=np.int)
-        self.size = np.max(self.indices) + 1
+        if len(arg) ==0:
+            self.__initialise_from_void()
+        else:
+            self.values = np.array(list(arg.values()), dtype=self.dtype)
+            self.indices = np.array(list(arg.keys()), dtype=np.int)
+            self.size = np.max(self.indices) + 1
         
     def __initialise_from_string(self, arg):
-        l = sorted([(np.int(p.split(':')[0]),p.split(':')[1]) for p in arg.strip('{ ,}').split(',')])
-        self.values = np.array([kv[1] for kv in l], dtype=self.dtype)
-        self.indices = np.array([kv[0] for kv in l], dtype=np.int)
-        self.size = np.max(self.indices) + 1
+        arg = arg.replace(" ", "").strip('{,}')
+        if len(arg) ==0:
+            self.__initialise_from_void()
+        else:
+            l = sorted([(np.int(p.split(':')[0]),p.split(':')[1]) for p in arg.split(',')])
+            self.values = np.array([kv[1] for kv in l], dtype=self.dtype)
+            self.indices = np.array([kv[0] for kv in l], dtype=np.int)
+            self.size = np.max(self.indices) + 1
 
     def __initialise_from_tuple(self, arg):
         indices, values = arg
         assert len(indices) == len(values), \
             "You must provide a tuple of two vectors (indices, values),\n" \
             "and indices must be integers."
-        self.values = np.array(values, dtype=self.dtype)
-        self.indices = np.array(indices, dtype=np.int)
-        self.size = np.max(self.indices) + 1
+        if len(indices) == 0:
+            self.__initialise_from_void()
+        else:
+            self.values = np.array(values, dtype=self.dtype)
+            self.indices = np.array(indices, dtype=np.int)
+            self.size = np.max(self.indices) + 1
 
     def __initialise_from_iterable(self, arg):
         self.values = np.array(list(arg), dtype=self.dtype)
@@ -187,14 +228,20 @@ class SparseVector(object):
         k = np.where(self.values == value)[0]
         return k[0] if k.size > 0 else None
 
+    
+
     def __eq__(self, other):
-        return all(a == b for a, b in zip_longest(self, other))
+        A = normalized(self) #FIXME not very efficient
+        B = normalized(other)
+        return all(a == b for a, b in zip_longest(A,B))
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __lt__(self, other):
-        return any(a < b for a, b in zip_longest(self, other))
+        A = normalized(self) #FIXME not very efficient
+        B = normalized(other)
+        return any(a < b for a, b in zip_longest(A,B))
 
     def __ge__(self, other):
         return not self.__lt__(other)
@@ -299,15 +346,29 @@ class SparseVector(object):
         """
         return { k:v for k,v in zip(self.indices,self.values) if v != self.default }
 
-    def to_string(self):
+    def to_string(self, with_spaces : bool = False):
         """
         Output as a string in python dict format like for insance: '1:2,5:3,7:1'.
         """
-        return ','.join(["{}:{}".format(k,v) for k,v in sorted(zip(self.indices,self.values)) if v != self.default])
+        if with_spaces:
+            return ' , '.join(["{} : {}".format(k,v) for k,v in sorted(zip(self.indices,self.values)) if v != self.default])
+        else:
+            return ','.join(["{}:{}".format(k,v) for k,v in sorted(zip(self.indices,self.values)) if v != self.default])
     
     def __hash__(self):
         """
         Makes the object hashable
         """
-        return hash(to_sring(self))
+        return hash(to_string(self))
+    
+    
+    def items(self):
+        """
+        Get key, value pairs
+        """
+        return zip(self.indices, self.values)
+    
+    
+    def copy(self):
+        return SparseVector((self.indices, self.values))
         

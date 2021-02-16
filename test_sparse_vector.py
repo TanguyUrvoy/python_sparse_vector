@@ -2,7 +2,6 @@
 
 import unittest
 import numpy
-from future.builtins import range
 from sparse_vector import SparseVector
 
 
@@ -35,9 +34,17 @@ class TestSparseVector(unittest.TestCase):
         })
         self.assertEqual([0, 0, 0, 5, 6], sv)
         
+    def test_initialisation_by_empty_dict(self):
+        sv = SparseVector({})
+
+        
     def test_initialisation_by_string(self):
         sv = SparseVector("3:5,4:6,7:1")
         self.assertEqual([0, 0, 0, 5, 6, 0, 0, 1], sv)
+        
+    def test_initialisation_by_empty_string(self):
+        sv = SparseVector("")
+        self.assertEqual([], sv)
         
 
     def test_initialisation_by_dict_with_non_numeric_key(self):
@@ -240,6 +247,16 @@ class TestSparseVector(unittest.TestCase):
         self.assertTrue(b == a)
         self.assertTrue(not b != a)
         self.assertEqual(b, a)
+        
+    def test_equality_denormalized(self):
+        a = SparseVector({0:0})
+        b = SparseVector({0:0, 1:0})
+        self.assertTrue(a == b)
+        self.assertTrue(not a != b)
+        self.assertEqual(a, b)
+        self.assertTrue(b == a)
+        self.assertTrue(not b != a)
+        self.assertEqual(b, a)        
 
     def test_inequality_same_length(self):
         a = SparseVector([1, 2, 3])
