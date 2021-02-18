@@ -14,6 +14,7 @@ project (sparse_vector)
     message(STATUS "PYTHON_LIBRARIES = ${PYTHON_LIBRARIES}")
     message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
     message(STATUS "PYTHON_INCLUDE_DIRS = ${PYTHON_INCLUDE_DIRS}")
+    message(STATUS "WARNING: Try 'export CPLUS_INCLUDE_PATH=${PYTHON_INCLUDE_DIRS}' if Boost building fails")
     include(BuildBoost) # module personnalisé
 
     include_directories(${Boost_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
