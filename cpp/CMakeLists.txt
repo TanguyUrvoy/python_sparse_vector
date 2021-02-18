@@ -4,6 +4,8 @@ include(ExternalProject)
 # Ajout d'un module cmake personnalisé pour générer boost
 list(APPEND CMAKE_MODULE_PATH  "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+
+
 project (sparse_vector)
 
     # Trouver les bibliothèques et interpréteurs python par défaut
@@ -25,3 +27,6 @@ project (sparse_vector)
     # Ajuste le nom de la bibliothèque pour coller à ce qu'attend Python
     set_target_properties(sparse_vector PROPERTIES SUFFIX .so)
     set_target_properties(sparse_vector PROPERTIES PREFIX "")
+
+    # run test suite
+    add_custom_target(test COMMAND python ../test_sparse_vector.py)

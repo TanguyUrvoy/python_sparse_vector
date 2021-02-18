@@ -27,9 +27,11 @@ public:
     // Constructors //
     //////////////////
     
+    // Void
+    SparseVec(void) : dict() { }
     
     // Copy
-    SparseVec(const SparseVec<Values> & sv) : dict(sv.dict) {}
+    SparseVec(const SparseVec<Values> & sv) : dict(sv.dict) { }
         
     // From string-encoded map
     SparseVec(std::string str) {
@@ -46,10 +48,22 @@ public:
         }
     }
     
-    // From dense vector
+    // From python list
     SparseVec( boost::python::list v) { 
         for(int i = 0; i != boost::python::len(v); ++i)
             dict[i] = boost::python::extract<Values>(v[i]);
+    }
+    
+    // From pyhon dict
+    SparseVec( boost::python::dict d) { 
+        boost::python::list keys = boost::python::list(d.keys());
+        for (int i = 0; i < len(keys); ++i) {
+            boost::python::extract<int> extractor(keys[i]);
+            if (extractor.check()) {
+                int key = extractor();
+                dict[key] = boost::python::extract<Values>(d[key]);
+            }
+        }
     }
     
     
@@ -85,6 +99,41 @@ public:
         str += "}";
         return str;
     }
+    
+    
+    // Compute a known dimension lowerbound of the vector
+    int get_dim(void) {
+        int max = -1;
+        for(auto p : dict) if(max<p.first) max = p.first;
+        return max + 1;
+    }
+
+    // Dense c++ vector representation
+    std::vector<Values> densify(void) {
+        std::vector<Values> l;
+        for(int i = 0; i < get_dim(); ++i)
+            l.push_back(dict[i]);
+        return l;
+    }
+    
+    // Dense python list representation
+    boost::python::list to_list(void) {
+        boost::python::list l;
+        for(int i = 0; i < get_dim(); ++i)
+            l.append(dict[i]);
+        return l;
+    }
+    
+    
+    // Dense python list representation
+    boost::python::dict to_dict(void) {
+        boost::python::dict d;
+        for(auto p : dict)
+            if(p.second != 0)
+                d[p.first] = p.second;
+        return d;
+    }
+    
     
     
     //////////////////

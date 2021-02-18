@@ -5,9 +5,13 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(sparse_vector)
 {
-    class_< SparseVec<float> >("SparseVec", init<std::string>())
+    class_< SparseVec<float> >("SparseVector", init<std::string>())
     .def(init< list >())
+    .def(init< dict >())
+    .def(init<>())
     .def("__repr__", &SparseVec<float>::repr)
+    .def("tolist", &SparseVec<float>::to_list)
+    .def("todict", &SparseVec<float>::to_dict)
     .def("__setitem__", &SparseVec<float>::set_item)
     .def("__getitem__", &SparseVec<float>::get_item)
     .def("__iadd__", &SparseVec<float>::iadd)
@@ -23,6 +27,31 @@ BOOST_PYTHON_MODULE(sparse_vector)
     .def("__lt__", &SparseVec<float>::lt)
     .def("__gt__", &SparseVec<float>::gt)
     ;
+    
+    
+    class_< SparseVec<int> >("iSparseVector", init<std::string>())
+    .def(init< list >())
+    .def(init< dict >())
+    .def(init<>())
+    .def("__repr__", &SparseVec<int>::repr)
+    .def("tolist", &SparseVec<int>::to_list)
+    .def("todict", &SparseVec<int>::to_dict)
+    .def("__setitem__", &SparseVec<int>::set_item)
+    .def("__getitem__", &SparseVec<int>::get_item)
+    .def("__iadd__", &SparseVec<int>::iadd)
+    .def("__add__", &SparseVec<int>::add)
+    .def("__isub__", &SparseVec<int>::isub)
+    .def("__sub__", &SparseVec<int>::sub)
+    .def("__imul__", &SparseVec<int>::isub)
+    .def("__mul__", &SparseVec<int>::sub)
+    .def("__eq__", &SparseVec<int>::eq)
+    .def("__ne__", &SparseVec<int>::neq)
+    .def("__le__", &SparseVec<int>::leq)
+    .def("__ge__", &SparseVec<int>::geq)
+    .def("__lt__", &SparseVec<int>::lt)
+    .def("__gt__", &SparseVec<int>::gt)
+    ;
+    
     
 }
 
